@@ -18,15 +18,17 @@
  * @tparam T Tipo de valor armazenado na árvore
  */
 template <
-	class T, 
-	class LT = std::less<T>
+	class T,
+	class Key = T,
+	class Compare = std::less<T>
 > class avl_tree {
 private:
 
 	T* info;
 	avl_tree* left;
 	avl_tree* right;
-	LT is_less = LT();
+	
+	Compare is_less = Compare();
 
 	/**
 	 * @brief Calcula o fator de balanceamento da árvore
@@ -165,9 +167,9 @@ public:
 	}
 	
 	/**
-	 * @brief Calcula a altura da árvore
+	 * @brief Calcula a aCompareura da árvore
 	 * 
-	 * @return int a altura da árvore
+	 * @return int a aCompareura da árvore
 	 */
 	int height() const {
 		int lh = left ? left->height() : 0,
