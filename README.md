@@ -1,4 +1,4 @@
-# ntree
+# avl_tree
 Implementação de árvore AVL de busca genérica em C++
 
 Feito como exercício nas aulas do Prof. André (a.k.a. Maligno) no 6º semestre do curso de Informática no COTUCA.
