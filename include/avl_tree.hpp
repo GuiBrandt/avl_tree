@@ -10,7 +10,11 @@
 #define AVL_TREE_HPP
 
 #include <functional>
+#include <iterator>
 #include <iostream>
+#include <utility>
+#include <queue>
+#include <stack>
 
 /**
  * @brief Árvore AVL
@@ -24,11 +28,12 @@ template <
 > class avl_tree {
 private:
 
-	T* info;
-	avl_tree* left;
-	avl_tree* right;
-	
-	Compare is_less = Compare();
+	T* info;			//! Informação do nó
+	avl_tree* left;		//! Nó à esquerda
+	avl_tree* right;	//! Nó à direita
+
+	int _size;			//! Número de elementos na árvore
+	int _height;		//! Altura da árvore
 
 	/**
 	 * @brief Calcula o fator de balanceamento da árvore
@@ -45,6 +50,9 @@ private:
 	 * @param ptr Referência de ponteiro do galho
 	 */
 	inline void delete_if_empty(avl_tree* & ptr) {
+		if (!ptr)
+			return;
+
 		if (ptr->empty()) {
 			delete ptr;
 			ptr = nullptr;
@@ -55,24 +63,32 @@ private:
 	 * @brief Rotação à esquerda
 	 */
 	void rotate_left() {
+		using std::swap;
+
 		avl_tree* aux = this->right;
 
 		this->right = aux->left;
 
 		swap(*this, *aux);
 		this->left = aux;
+
+		swap(this->_size, aux->_size);
 	}
 
 	/**
 	 * @brief Rotação à direita
 	 */
 	void rotate_right() {
+		using std::swap;
+
 		avl_tree* aux = this->left;
 
 		this->left = aux->right;
 
 		swap(*this, *aux);
 		this->right = aux;
+
+		swap(this->_size, aux->_size);
 	}
 
 	/**
@@ -110,6 +126,8 @@ public:
 		info = nullptr;
 		left = nullptr;
 		right = nullptr;
+		_height = 0;
+		_size = 0;
 	}
 	
 	/**
@@ -148,6 +166,8 @@ public:
 		info = clone_ptr(model.info);
 		left = clone_ptr(model.left);
 		right = clone_ptr(model.right);
+		_height = model._height;
+		_size = model._size;
 
 		return *this;
 	}
@@ -164,23 +184,29 @@ public:
 		swap(first.info, other.info);
 		swap(first.left, other.left);
 		swap(first.right, other.right);
+		swap(first._height, other._height);
+		swap(first._size, other._size);
 	}
 	
 	/**
-	 * @brief Calcula a aCompareura da árvore
+	 * @brief Obtém a altura da árvore
 	 * 
-	 * @return int a aCompareura da árvore
+	 * @return int a altura da árvore
 	 */
 	int height() const {
 		int lh = left ? left->height() : 0,
-			rh = right ? right->height() : 0,
+			rh = right ? right->height() : 0;
 
-			h = lh > rh ? lh : rh;
-
-		if (!empty())
-			h++;
-
-		return h;
+		return (lh > rh ? lh : rh) + 1;
+	}
+	
+	/**
+	 * @brief Obtém a quantidade de elementos da árvore
+	 * 
+	 * @return int a quantidade de elementos da árvore
+	 */
+	int size() const {
+		return _size;
 	}
 
 	/**
@@ -242,21 +268,21 @@ public:
 		if (empty())
 			throw "Can't pop from an empty tree";
 
+		T aux;
+
 		if (right) {
-			T aux = right->pop();
+			aux = right->pop();
 			delete_if_empty(right);
 
-			rebalance();
-
-			return aux;
 		} else {
-			T aux = *info;
+			aux = *info;
 			info = left ? new T(left->popleft()) : nullptr;
-
-			rebalance();
-
-			return aux;
+			delete_if_empty(left);
 		}
+
+		rebalance();
+
+		return aux;
 	}
 
 	/**
@@ -268,29 +294,33 @@ public:
 		if (empty())
 			throw "Can't pop from an empty tree";
 
+		T aux;
+
 		if (left) {
-			T aux = left->popleft();
-			delete_if_empty(right);
+			aux = left->popleft();
+			delete_if_empty(left);
 
-			rebalance();
-
-			return aux;
 		} else {
-			T aux = *info;
+			aux = *info;
 			info = right ? new T(right->pop()) : nullptr;
-
-			rebalance();
-
-			return aux;
+			delete_if_empty(right);
 		}
+
+		rebalance();
+
+		return aux;
 	}
 
 	/**
 	 * @brief Remove todas as informações da árvore
 	 */
 	void clear() {
-		~avl_tree();
-		avl_tree();
+		this->~avl_tree();
+
+		info = nullptr;
+		left = right = nullptr;
+		_height = 0;
+		_size = 0;
 	}
 
 	/**
@@ -299,23 +329,32 @@ public:
 	 * @param data Dados a serem inseridos na árvore
 	 */
 	void insert(T data) {
-		if (info == nullptr)
-			info = new T(data);
+		Compare is_less;
 
-		else if (is_less(data, *info)) {
+		if (info == nullptr) {
+			info = new T(data);
+			_height = 1;
+
+		} else if (is_less(data, *info)) {
 			if (left == nullptr)
 				left = new avl_tree();
 
 			left->insert(data);
+			/*if (!right || right->height() < left->height())
+				_height = left->height() + 1;*/
 
 		} else if (data != *info) {
 			if (right == nullptr)
 				right = new avl_tree();
 
 			right->insert(data);
+			/*if (!left || left->height() < right->height())
+				_height = right->height() + 1;*/
 
 		} else
 			throw "Repeated information";
+
+		_size++;
 
 		rebalance();
 	}
@@ -326,6 +365,8 @@ public:
 	 * @param data Informação a ser removida
 	 */
 	void remove(const T & data) {
+		Compare is_less;
+
 		if (empty())
 			throw "Can't remove from empty tree";
 
@@ -338,8 +379,10 @@ public:
 				*info = right->popleft();
 				delete_if_empty(right);
 
-			} else
+			} else {
+				delete info;
 				info = nullptr;
+			}
 
 		} else if (left && is_less(data, *info)) {
 			left->remove(data);
@@ -351,6 +394,9 @@ public:
 
 		} else
 			throw "Information not found";
+
+			
+		_size--;
 	}
 	
 	/**
@@ -359,6 +405,8 @@ public:
 	 * @param data Dados a serem procurados
 	 */
 	bool includes(const T & data) const {
+		Compare is_less;
+
 		if (empty())
 			return false;
 
@@ -370,6 +418,187 @@ public:
 			return right->includes(data);
 		else
 			return false;
+	}
+
+	/**
+	 * @brief Classe de iterador por nível da árvore AVL
+	 * 
+	 */
+	class level_iterator : public std::iterator<std::input_iterator_tag, const T*> {
+		friend class avl_tree;
+
+		private:
+			typedef std::pair<int, avl_tree*> node;	//! Tipo usado para um nó na árvore
+
+			std::queue<node> q;						//! Fila do iterador
+			int _level;								//! Nível atual do iterador na árvore
+
+			/**
+			 * @brief Construtor
+			 * 
+			 * @param t Ponteiro para a árvore AVL de início
+			 */
+			level_iterator(avl_tree* t) {
+				if (t)
+					q.push(node(0, t));
+
+				_level = 0;
+			}
+
+		public:
+
+			/**
+			 * @brief Construtor de cópia
+			 * 
+			 * @param other Objeto modelo
+			 */
+			level_iterator(const level_iterator & other) {
+				q = other.q;
+				_level = other._level;
+			}
+
+			/**
+			 * @brief Operador de incremento prefixo
+			 * 
+			 * @return level_iterator& Este iterador, uma posição à frente
+			 */
+			level_iterator& operator++() {
+				node current = q.front();
+
+				int lv = current.first;
+				avl_tree* t = current.second;
+
+				if (t->left)
+					q.push(node(lv + 1, t->left));
+
+				if (t->right)
+					q.push(node(lv + 1, t->right));
+
+				q.pop();
+
+				return *this;
+			}
+
+			/**
+			 * @brief Operador de swap
+			 * 
+			 * @param a Um iterador
+			 * @param b Outro iterador
+			 */
+			friend void swap(level_iterator & a, level_iterator & b) {
+				using std::swap;
+
+				swap(a.q, b.q);
+				swap(a.level, b.level);
+			}
+
+			/**
+			 * @brief Operador de incremento posfixo
+			 * 
+			 * @return level_iterator Uma cópia deste iterador
+			 */
+			level_iterator operator++(int) {
+				level_iterator aux(*this);
+				operator++();
+				return aux;
+			}
+			
+			/**
+			 * @brief Operador de igualdade
+			 * 
+			 * @param other Iterador a ser comparado
+			 * @return true se forem iguais
+			 * @return false se não
+			 */
+			bool operator==(const level_iterator & other) const {
+				if (q.empty())
+					return other.q.empty();
+
+				return q.front() == other.q.front();
+			}
+
+			/**
+			 * @brief Operador de não-igualdade
+			 * 
+			 * @param other Iterador a ser comparado
+			 * @return true se forem iguais
+			 * @return false se não
+			 */
+			bool operator!=(const level_iterator & other) const {
+				return !(*this == other);
+			}
+
+			/**
+			 * @brief Obtém o nível atual do iterador na árvore
+			 * 
+			 * @return int O nível atual na árvore
+			 */
+			int level() {
+				return q.front().first;
+			}
+
+			/**
+			 * @brief Operador de derreferenciação
+			 * 
+			 * @return T& A informação atual
+			 */
+			const T& operator*() const {
+				return *q.front().second->info;
+			}
+
+			/**
+			 * @brief Operador de derreferenciação
+			 * 
+			 * @return T& Ponteiro da informação atual
+			 */
+			const T* operator->() const {
+				return q.front().second->info;
+			}
+	};
+	
+	/**
+	 * @brief Obtém o iterador por nível para o começo da árvore
+	 * 
+	 * @return level_iterator Iterador por nível
+	 */
+	level_iterator level_begin() {
+		return empty() ? level_end() : level_iterator(this);
+	}
+
+	/**
+	 * @brief Obtém o iterador por nível para o fim da árvore
+	 * 
+	 * @return level_iterator Iterador por nível
+	 */
+	level_iterator level_end() {
+		return level_iterator(nullptr);
+	}
+
+	/**
+	 * @brief Escreve uma árvore para uma stream de saída em ordem
+	 * 
+	 * @param out Stream de saída
+	 * @param tree Árvore a ser escrita
+	 * @return std::ostream& A stream recebida por parâmetro
+	 */
+	friend std::ostream & operator << (
+		std::ostream & out,
+		const avl_tree < T > & tree
+	) {
+		out << "( ";
+
+		if (tree.left)
+			out << *tree.left << " ";
+
+		if (tree.info)
+			out << *tree.info << " ";
+
+		if (tree.right)
+			out << *tree.right << " ";
+
+		out << ")";
+
+		return out;
 	}
 };
 
