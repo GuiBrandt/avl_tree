@@ -23,8 +23,8 @@
  */
 template <
 	class T,
-	class Key = T,
-	class Compare = std::less<T>
+	class Compare = std::less<T>,
+	class Equal = std::equal_to<T>
 > class avl_tree {
 private:
 
@@ -333,6 +333,7 @@ public:
 	 */
 	void insert(T data) {
 		Compare is_less;
+		Equal is_equal;
 
 		if (info == nullptr) {
 			info = new T(data);
@@ -347,7 +348,7 @@ public:
 			if (left->height() >= _height)
 				_height = left->height() + 1;
 
-		} else if (data != *info) {
+		} else if (!is_equal(data, *info)) {
 			if (right == nullptr)
 				right = new avl_tree();
 
@@ -363,6 +364,34 @@ public:
 
 		rebalance();
 	}
+	
+	/**
+	 * @brief Atualiza uma informação na árvore
+	 * 
+	 * @param data Dados a serem atualizados na árvore
+	 */
+	void update(const T& data) {
+		Compare is_less;
+		Equal is_equal;
+
+		if (info == nullptr) {
+			throw "Information not found";
+
+		} else if (is_less(data, *info)) {
+			if (left == nullptr)
+				throw "Information not found";
+
+			left->update(data);
+
+		} else if (!is_equal(data, *info)) {
+			if (left == nullptr)
+				throw "Information not found";
+
+			right->update(data);
+
+		} else
+			*info = data;
+	}
 
 	/**
 	 * @brief Remove uma informação da árvore
@@ -371,11 +400,12 @@ public:
 	 */
 	void remove(const T & data) {
 		Compare is_less;
+		Equal is_equal;
 
 		if (empty())
 			throw "Can't remove from empty tree";
 
-		if (*info == data) {
+		if (is_equal(*info, data)) {
 			if (left) {
 				*info = left->pop();
 				delete_if_empty(left);
@@ -409,20 +439,49 @@ public:
 	 * 
 	 * @param data Dados a serem procurados
 	 */
-	bool includes(const T & data) const {
+	bool includes(T& data) const {
 		Compare is_less;
+		Equal is_equal;
 
 		if (empty())
 			return false;
 
-		if (*info == data)
+		if (is_equal(*info, data)) {
+			data = *info;
 			return true;
-		else if (left && is_less(data, *info))
+		} else if (left && is_less(data, *info))
 			return left->includes(data);
 		else if (right)
 			return right->includes(data);
 		else
 			return false;
+	}
+	
+	/**
+	 * @brief Escreve uma árvore para uma stream de saída em ordem
+	 * 
+	 * @param out Stream de saída
+	 * @param tree Árvore a ser escrita
+	 * @return std::ostream& A stream recebida por parâmetro
+	 */
+	friend std::ostream & operator << (
+		std::ostream & out,
+		const avl_tree < T > & tree
+	) {
+		out << "( ";
+
+		if (tree.left)
+			out << *tree.left << " ";
+
+		if (tree.info)
+			out << *tree.info << " ";
+
+		if (tree.right)
+			out << *tree.right << " ";
+
+		out << ")";
+
+		return out;
 	}
 
 	/**
@@ -718,33 +777,6 @@ public:
 	 */
 	inorder_iterator end_in_order() {
 		return inorder_iterator(nullptr);
-	}
-
-	/**
-	 * @brief Escreve uma árvore para uma stream de saída em ordem
-	 * 
-	 * @param out Stream de saída
-	 * @param tree Árvore a ser escrita
-	 * @return std::ostream& A stream recebida por parâmetro
-	 */
-	friend std::ostream & operator << (
-		std::ostream & out,
-		const avl_tree < T > & tree
-	) {
-		out << "( ";
-
-		if (tree.left)
-			out << *tree.left << " ";
-
-		if (tree.info)
-			out << *tree.info << " ";
-
-		if (tree.right)
-			out << *tree.right << " ";
-
-		out << ")";
-
-		return out;
 	}
 };
 
