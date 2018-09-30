@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
 
     cout << "i|insert x                     : Insert X" << endl;
     cout << "r|remove x                     : Remove X" << endl;
-    cout << "p|print [(in|pre|post|level)]  : Print out" << endl;
+    cout << "p|print [(sorted|level)]  : Print out" << endl;
     cout << "c|r|clear|reset                : Reset" << endl;
     cout << "q|e|quit|exit                  : Quit" << endl;
     cout << endl;
@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
             string mode = m[1];
 
             if (mode.empty())
-                mode = "in";
+                mode = "sorted";
 
             transform(
                 mode.begin(), mode.end(), 
@@ -82,18 +82,14 @@ int main(int argc, char** argv) {
                 ::tolower
             );
 
-            if (mode == "in") {
+            // Escreve os elementos da árvore em ordem
+            if (mode == "sorted") {
                 for (auto it = tree.begin_in_order(); it != tree.end_in_order(); it++)
                     cout << *it << " ";
 
                 cout << endl;
 
-            } else if (mode == "pre") {
-
-
-            } else if (mode == "post") {
-
-
+            // Escreve os elementos da árvore por nível
             } else if (mode == "level") {
                 int level = 0;
 
