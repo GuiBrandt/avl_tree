@@ -83,7 +83,10 @@ int main(int argc, char** argv) {
             );
 
             if (mode == "in") {
-                cout << tree << endl;
+                for (auto it = tree.begin_in_order(); it != tree.end_in_order(); it++)
+                    cout << *it << " ";
+
+                cout << endl;
 
             } else if (mode == "pre") {
 

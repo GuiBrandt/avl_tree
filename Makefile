@@ -27,6 +27,7 @@ obj/%_tests.o: tests/%_tests.cpp include/%.hpp
 	$(CXX) $(CXXFLAGS) -I$(INCLUDES) $(LDLIBS) -c $< -o $@
 
 obj/main.o: main.cpp include/avl_tree.hpp
+	mkdir -p build
 	mkdir -p obj
 	$(CXX) $(CXXFLAGS) -I$(INCLUDES) $(LDLIBS) -c $< -o $@
 

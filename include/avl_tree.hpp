@@ -425,118 +425,6 @@ public:
 			return false;
 	}
 
-private:
-	/**
-	 * @brief Classe de iteradores que seguem uma ordem (em-ordem, pré-ordem 
-	 * 		  e pós-ordem)
-	 */
-	class anyorder_iterator : private std::iterator<std::input_iterator_tag, const T*> {
-		friend class avl_tree;
-
-	protected:
-		std::stack<avl_tree*> stack;	//! Pilha de nós percorridos
-
-	private:
-		/**
-		 * @brief Construtor
-		 * 
-		 * @param tree Árvore a ser percorrida
-		 */
-		anyorder_iterator(avl_tree* tree) {
-			stack.push(tree);
-			while (stack.top()->left)
-				stack.push(stack.top()->left);
-		}
-
-	public:
-		/**
-		 * @brief Construtor de cópia
-		 * 
-		 * @param other Objeto modelo
-		 */
-		anyorder_iterator(const anyorder_iterator & other) {
-			stack = other.stack;
-		}
-
-		/**
-		 * @brief Operador de incremento prefixo
-		 * 
-		 * @return anyorder_iterator& Este iterador, uma posição à frente
-		 */
-		anyorder_iterator& operator++() {
-			// TODO
-			return *this;
-		}
-
-		/**
-		 * @brief Operador de swap
-		 * 
-		 * @param a Um iterador
-		 * @param b Outro iterador
-		 */
-		friend void swap(anyorder_iterator & a, anyorder_iterator & b) {
-			using std::swap;
-
-			swap(a.stack, b.stack);
-		}
-
-		/**
-		 * @brief Operador de incremento posfixo
-		 * 
-		 * @return anyorder_iterator Uma cópia deste iterador
-		 */
-		anyorder_iterator operator++(int) {
-			anyorder_iterator aux(*this);
-			operator++();
-			return aux;
-		}
-		
-		/**
-		 * @brief Operador de igualdade
-		 * 
-		 * @param other Iterador a ser comparado
-		 * @return true se forem iguais
-		 * @return false se não
-		 */
-		bool operator==(const anyorder_iterator & other) const {
-			if (stack.empty())
-				return other.stack.empty();
-
-			return stack.top() == other.stack.top();
-		}
-
-		/**
-		 * @brief Operador de não-igualdade
-		 * 
-		 * @param other Iterador a ser comparado
-		 * @return true se forem iguais
-		 * @return false se não
-		 */
-		bool operator!=(const anyorder_iterator & other) const {
-			return !(*this == other);
-		}
-
-		/**
-		 * @brief Operador de derreferenciação
-		 * 
-		 * @return T& A informação atual
-		 */
-		const T& operator*() const {
-			return *stack.top()->info;
-		}
-
-		/**
-		 * @brief Operador de derreferenciação
-		 * 
-		 * @return T& Ponteiro da informação atual
-		 */
-		const T* operator->() const {
-			return stack.top()->info;
-		}
-	};
-
-public:
-
 	/**
 	 * @brief Classe de iterador por nível da árvore AVL
 	 */
@@ -579,6 +467,9 @@ public:
 		 * @return level_iterator& Este iterador, uma posição à frente
 		 */
 		level_iterator& operator++() {
+			if (q.empty())
+				throw "Iterator ran out of bounds";
+
 			node current = q.front();
 
 			int lv = current.first;
@@ -630,6 +521,9 @@ public:
 			if (q.empty())
 				return other.q.empty();
 
+			else if (other.q.empty())
+				return false;
+
 			return q.front() == other.q.front();
 		}
 
@@ -675,24 +569,118 @@ public:
 	/**
 	 * @brief Classe de iterador em-ordem da árvore AVL
 	 */
-	class inorder_iterator : private anyorder_iterator {
+	class inorder_iterator : public std::iterator<std::input_iterator_tag, T> {
+		friend class avl_tree;
+
+	private:
+
+		std::stack<avl_tree*> stack;	//! Pilha de nós percorridos
+
+		/**
+		 * @brief Construtor
+		 * 
+		 * @param tree Árvore a ser percorrida
+		 */
+		inorder_iterator(avl_tree* tree) {
+			if (tree) {
+				stack.push(tree);
+
+				while (stack.top()->left)
+					stack.push(stack.top()->left);
+			}
+		}
+
 	public:
-		inorder_iterator& operator++() override {
+
+		/**
+		 * @brief Operador de incremento prefixo
+		 * 
+		 * @return level_iterator& Este iterador, uma posição à frente
+		 */
+		inorder_iterator& operator++() {
+			if (stack.empty())
+				throw "Iterator ran out of bounds";
+
+			avl_tree* current = stack.top();
+			stack.pop();
+
+			if (current->right) {
+				stack.push(current->right);
+
+				while (stack.top()->left)
+					stack.push(stack.top()->left);
+			}
+
 			return *this;
 		}
-	};
+		
+		/**
+		 * @brief Operador de swap
+		 * 
+		 * @param a Um iterador
+		 * @param b Outro iterador
+		 */
+		friend void swap(inorder_iterator & a, inorder_iterator & b) {
+			using std::swap;
 
-	class preorder_iterator : private anyorder_iterator {
-	public:
-		preorder_iterator& operator++() override {
-			return *this;
+			swap(a.stack, b.stack);
 		}
-	};
 
-	class postorder_iterator : private anyorder_iterator {
-	public:
-		postorder_iterator& operator++() override {
-			return *this;
+		/**
+		 * @brief Operador de incremento posfixo
+		 * 
+		 * @return anyorder_iterator Uma cópia deste iterador
+		 */
+		inorder_iterator operator++(int) {
+			inorder_iterator aux(*this);
+			operator++();
+			return aux;
+		}
+		
+		/**
+		 * @brief Operador de igualdade
+		 * 
+		 * @param other Iterador a ser comparado
+		 * @return true se forem iguais
+		 * @return false se não
+		 */
+		bool operator==(const inorder_iterator & other) const {
+			if (stack.empty())
+				return other.stack.empty();
+
+			else if (other.stack.empty())
+				return false;
+
+			return stack.top() == other.stack.top();
+		}
+
+		/**
+		 * @brief Operador de não-igualdade
+		 * 
+		 * @param other Iterador a ser comparado
+		 * @return true se forem iguais
+		 * @return false se não
+		 */
+		bool operator!=(const inorder_iterator & other) const {
+			return !(*this == other);
+		}
+
+		/**
+		 * @brief Operador de derreferenciação
+		 * 
+		 * @return T& A informação atual
+		 */
+		const T& operator*() const {
+			return *stack.top()->info;
+		}
+
+		/**
+		 * @brief Operador de derreferenciação
+		 * 
+		 * @return T& Ponteiro da informação atual
+		 */
+		const T* operator->() const {
+			return stack.top()->info;
 		}
 	};
 
@@ -712,6 +700,24 @@ public:
 	 */
 	level_iterator end_by_level() {
 		return level_iterator(nullptr);
+	}
+	
+	/**
+	 * @brief Obtém o iterador em ordem para o começo da árvore
+	 * 
+	 * @return inorder_iterator Iterador em-ordem
+	 */
+	inorder_iterator begin_in_order() {
+		return empty() ? end_in_order() : inorder_iterator(this);
+	}
+
+	/**
+	 * @brief Obtém o iterador em ordem para o fim da árvore
+	 * 
+	 * @return inorder_iterator Iterador em-ordem
+	 */
+	inorder_iterator end_in_order() {
+		return inorder_iterator(nullptr);
 	}
 
 	/**
