@@ -67,12 +67,15 @@ private:
 
 		avl_tree* aux = this->right;
 
+		this->_height -= 2;
+		aux->_height++;
+
+		swap(this->_size, aux->_size);
+
 		this->right = aux->left;
 
 		swap(*this, *aux);
 		this->left = aux;
-
-		swap(this->_size, aux->_size);
 	}
 
 	/**
@@ -82,13 +85,16 @@ private:
 		using std::swap;
 
 		avl_tree* aux = this->left;
+		
+		this->_height -= 2;
+		aux->_height++;
+		
+		swap(this->_size, aux->_size);
 
 		this->left = aux->right;
 
 		swap(*this, *aux);
 		this->right = aux;
-
-		swap(this->_size, aux->_size);
 	}
 
 	/**
@@ -194,10 +200,7 @@ public:
 	 * @return int a altura da árvore
 	 */
 	int height() const {
-		int lh = left ? left->height() : 0,
-			rh = right ? right->height() : 0;
-
-		return (lh > rh ? lh : rh) + 1;
+		return _height;
 	}
 	
 	/**
@@ -340,16 +343,18 @@ public:
 				left = new avl_tree();
 
 			left->insert(data);
-			/*if (!right || right->height() < left->height())
-				_height = left->height() + 1;*/
+
+			if (left->height() >= _height)
+				_height = left->height() + 1;
 
 		} else if (data != *info) {
 			if (right == nullptr)
 				right = new avl_tree();
 
 			right->insert(data);
-			/*if (!left || left->height() < right->height())
-				_height = right->height() + 1;*/
+
+			if (right->height() >= _height)
+				_height = right->height() + 1;
 
 		} else
 			throw "Repeated information";
@@ -420,149 +425,284 @@ public:
 			return false;
 	}
 
+private:
 	/**
-	 * @brief Classe de iterador por nível da árvore AVL
-	 * 
+	 * @brief Classe de iteradores que seguem uma ordem (em-ordem, pré-ordem 
+	 * 		  e pós-ordem)
 	 */
-	class level_iterator : public std::iterator<std::input_iterator_tag, const T*> {
+	class anyorder_iterator : private std::iterator<std::input_iterator_tag, const T*> {
 		friend class avl_tree;
 
-		private:
-			typedef std::pair<int, avl_tree*> node;	//! Tipo usado para um nó na árvore
+	protected:
+		std::stack<avl_tree*> stack;	//! Pilha de nós percorridos
 
-			std::queue<node> q;						//! Fila do iterador
-			int _level;								//! Nível atual do iterador na árvore
+	private:
+		/**
+		 * @brief Construtor
+		 * 
+		 * @param tree Árvore a ser percorrida
+		 */
+		anyorder_iterator(avl_tree* tree) {
+			stack.push(tree);
+			while (stack.top()->left)
+				stack.push(stack.top()->left);
+		}
 
-			/**
-			 * @brief Construtor
-			 * 
-			 * @param t Ponteiro para a árvore AVL de início
-			 */
-			level_iterator(avl_tree* t) {
-				if (t)
-					q.push(node(0, t));
+	public:
+		/**
+		 * @brief Construtor de cópia
+		 * 
+		 * @param other Objeto modelo
+		 */
+		anyorder_iterator(const anyorder_iterator & other) {
+			stack = other.stack;
+		}
 
-				_level = 0;
-			}
+		/**
+		 * @brief Operador de incremento prefixo
+		 * 
+		 * @return anyorder_iterator& Este iterador, uma posição à frente
+		 */
+		anyorder_iterator& operator++() {
+			// TODO
+			return *this;
+		}
 
-		public:
+		/**
+		 * @brief Operador de swap
+		 * 
+		 * @param a Um iterador
+		 * @param b Outro iterador
+		 */
+		friend void swap(anyorder_iterator & a, anyorder_iterator & b) {
+			using std::swap;
 
-			/**
-			 * @brief Construtor de cópia
-			 * 
-			 * @param other Objeto modelo
-			 */
-			level_iterator(const level_iterator & other) {
-				q = other.q;
-				_level = other._level;
-			}
+			swap(a.stack, b.stack);
+		}
 
-			/**
-			 * @brief Operador de incremento prefixo
-			 * 
-			 * @return level_iterator& Este iterador, uma posição à frente
-			 */
-			level_iterator& operator++() {
-				node current = q.front();
+		/**
+		 * @brief Operador de incremento posfixo
+		 * 
+		 * @return anyorder_iterator Uma cópia deste iterador
+		 */
+		anyorder_iterator operator++(int) {
+			anyorder_iterator aux(*this);
+			operator++();
+			return aux;
+		}
+		
+		/**
+		 * @brief Operador de igualdade
+		 * 
+		 * @param other Iterador a ser comparado
+		 * @return true se forem iguais
+		 * @return false se não
+		 */
+		bool operator==(const anyorder_iterator & other) const {
+			if (stack.empty())
+				return other.stack.empty();
 
-				int lv = current.first;
-				avl_tree* t = current.second;
+			return stack.top() == other.stack.top();
+		}
 
-				if (t->left)
-					q.push(node(lv + 1, t->left));
+		/**
+		 * @brief Operador de não-igualdade
+		 * 
+		 * @param other Iterador a ser comparado
+		 * @return true se forem iguais
+		 * @return false se não
+		 */
+		bool operator!=(const anyorder_iterator & other) const {
+			return !(*this == other);
+		}
 
-				if (t->right)
-					q.push(node(lv + 1, t->right));
+		/**
+		 * @brief Operador de derreferenciação
+		 * 
+		 * @return T& A informação atual
+		 */
+		const T& operator*() const {
+			return *stack.top()->info;
+		}
 
-				q.pop();
-
-				return *this;
-			}
-
-			/**
-			 * @brief Operador de swap
-			 * 
-			 * @param a Um iterador
-			 * @param b Outro iterador
-			 */
-			friend void swap(level_iterator & a, level_iterator & b) {
-				using std::swap;
-
-				swap(a.q, b.q);
-				swap(a.level, b.level);
-			}
-
-			/**
-			 * @brief Operador de incremento posfixo
-			 * 
-			 * @return level_iterator Uma cópia deste iterador
-			 */
-			level_iterator operator++(int) {
-				level_iterator aux(*this);
-				operator++();
-				return aux;
-			}
-			
-			/**
-			 * @brief Operador de igualdade
-			 * 
-			 * @param other Iterador a ser comparado
-			 * @return true se forem iguais
-			 * @return false se não
-			 */
-			bool operator==(const level_iterator & other) const {
-				if (q.empty())
-					return other.q.empty();
-
-				return q.front() == other.q.front();
-			}
-
-			/**
-			 * @brief Operador de não-igualdade
-			 * 
-			 * @param other Iterador a ser comparado
-			 * @return true se forem iguais
-			 * @return false se não
-			 */
-			bool operator!=(const level_iterator & other) const {
-				return !(*this == other);
-			}
-
-			/**
-			 * @brief Obtém o nível atual do iterador na árvore
-			 * 
-			 * @return int O nível atual na árvore
-			 */
-			int level() {
-				return q.front().first;
-			}
-
-			/**
-			 * @brief Operador de derreferenciação
-			 * 
-			 * @return T& A informação atual
-			 */
-			const T& operator*() const {
-				return *q.front().second->info;
-			}
-
-			/**
-			 * @brief Operador de derreferenciação
-			 * 
-			 * @return T& Ponteiro da informação atual
-			 */
-			const T* operator->() const {
-				return q.front().second->info;
-			}
+		/**
+		 * @brief Operador de derreferenciação
+		 * 
+		 * @return T& Ponteiro da informação atual
+		 */
+		const T* operator->() const {
+			return stack.top()->info;
+		}
 	};
-	
+
+public:
+
+	/**
+	 * @brief Classe de iterador por nível da árvore AVL
+	 */
+	class level_iterator : public std::iterator<std::input_iterator_tag, T> {
+		friend class avl_tree;
+
+	private:
+		typedef std::pair<int, avl_tree*> node;	//! Tipo usado para um nó na árvore
+
+		std::queue<node> q;						//! Fila do iterador
+		int _level;								//! Nível atual do iterador na árvore
+
+		/**
+		 * @brief Construtor
+		 * 
+		 * @param t Ponteiro para a árvore AVL de início
+		 */
+		level_iterator(avl_tree* t) {
+			if (t)
+				q.push(node(0, t));
+
+			_level = 0;
+		}
+
+	public:
+
+		/**
+		 * @brief Construtor de cópia
+		 * 
+		 * @param other Objeto modelo
+		 */
+		level_iterator(const level_iterator & other) {
+			q = other.q;
+			_level = other._level;
+		}
+
+		/**
+		 * @brief Operador de incremento prefixo
+		 * 
+		 * @return level_iterator& Este iterador, uma posição à frente
+		 */
+		level_iterator& operator++() {
+			node current = q.front();
+
+			int lv = current.first;
+			avl_tree* t = current.second;
+
+			if (t->left)
+				q.push(node(lv + 1, t->left));
+
+			if (t->right)
+				q.push(node(lv + 1, t->right));
+
+			q.pop();
+
+			return *this;
+		}
+
+		/**
+		 * @brief Operador de swap
+		 * 
+		 * @param a Um iterador
+		 * @param b Outro iterador
+		 */
+		friend void swap(level_iterator & a, level_iterator & b) {
+			using std::swap;
+
+			swap(a.q, b.q);
+			swap(a.level, b.level);
+		}
+
+		/**
+		 * @brief Operador de incremento posfixo
+		 * 
+		 * @return level_iterator Uma cópia deste iterador
+		 */
+		level_iterator operator++(int) {
+			level_iterator aux(*this);
+			operator++();
+			return aux;
+		}
+		
+		/**
+		 * @brief Operador de igualdade
+		 * 
+		 * @param other Iterador a ser comparado
+		 * @return true se forem iguais
+		 * @return false se não
+		 */
+		bool operator==(const level_iterator & other) const {
+			if (q.empty())
+				return other.q.empty();
+
+			return q.front() == other.q.front();
+		}
+
+		/**
+		 * @brief Operador de não-igualdade
+		 * 
+		 * @param other Iterador a ser comparado
+		 * @return true se forem iguais
+		 * @return false se não
+		 */
+		bool operator!=(const level_iterator & other) const {
+			return !(*this == other);
+		}
+
+		/**
+		 * @brief Obtém o nível atual do iterador na árvore
+		 * 
+		 * @return int O nível atual na árvore
+		 */
+		int level() {
+			return q.front().first;
+		}
+
+		/**
+		 * @brief Operador de derreferenciação
+		 * 
+		 * @return T& A informação atual
+		 */
+		const T& operator*() const {
+			return *q.front().second->info;
+		}
+
+		/**
+		 * @brief Operador de derreferenciação
+		 * 
+		 * @return T& Ponteiro da informação atual
+		 */
+		const T* operator->() const {
+			return q.front().second->info;
+		}
+	};
+
+	/**
+	 * @brief Classe de iterador em-ordem da árvore AVL
+	 */
+	class inorder_iterator : private anyorder_iterator {
+	public:
+		inorder_iterator& operator++() override {
+			return *this;
+		}
+	};
+
+	class preorder_iterator : private anyorder_iterator {
+	public:
+		preorder_iterator& operator++() override {
+			return *this;
+		}
+	};
+
+	class postorder_iterator : private anyorder_iterator {
+	public:
+		postorder_iterator& operator++() override {
+			return *this;
+		}
+	};
+
 	/**
 	 * @brief Obtém o iterador por nível para o começo da árvore
 	 * 
 	 * @return level_iterator Iterador por nível
 	 */
-	level_iterator level_begin() {
-		return empty() ? level_end() : level_iterator(this);
+	level_iterator begin_by_level() {
+		return empty() ? end_by_level() : level_iterator(this);
 	}
 
 	/**
@@ -570,7 +710,7 @@ public:
 	 * 
 	 * @return level_iterator Iterador por nível
 	 */
-	level_iterator level_end() {
+	level_iterator end_by_level() {
 		return level_iterator(nullptr);
 	}
 

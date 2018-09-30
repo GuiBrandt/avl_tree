@@ -11,7 +11,7 @@ using namespace regex_constants;
 static const regex INSERT(R"(^\s*(?:i|insert)\s*(\d+)\s*$)", icase | optimize);
 static const regex REMOVE(R"(^\s*(?:r|remove)\s*(\d+)\s*$)", icase | optimize);
 static const regex PRINT(R"(^\s*(?:p|print)\s*(in|pre|post|level)?\s*$)", icase | optimize);
-static const regex CLEAR(R"(^\s*(?:c|clear)\s*$)", icase | optimize);
+static const regex CLEAR(R"(^\s*(?:c|r|clear|reset)\s*$)", icase | optimize);
 static const regex QUIT(R"(^\s*(?:q|quit|exit)\s*$)", icase | optimize);
 
 /**
@@ -27,25 +27,29 @@ int main(int argc, char** argv) {
 
     avl_tree<int> tree;
 
+    // Cabeçalho
     cout << "Interactive AVL Tree" << endl;
     cout << endl;
 
-    cout << "i|insert x                     => Inserts X into the tree" << endl;
-    cout << "r|remove x                     => Removes X from the tree" << endl;
-    cout << "p|print [(in|pre|post|level)]  => Prints out the tree" << endl;
-    cout << "c|clear                        => Clears the tree" << endl;
-    cout << "q|e|quit|exit                  => Quits" << endl;
+    cout << "i|insert x                     : Insert X" << endl;
+    cout << "r|remove x                     : Remove X" << endl;
+    cout << "p|print [(in|pre|post|level)]  : Print out" << endl;
+    cout << "c|r|clear|reset                : Reset" << endl;
+    cout << "q|e|quit|exit                  : Quit" << endl;
     cout << endl;
 
     cout << "Have fun!" << endl;
 
     for (;;) {
+
         cout << "avl (" << tree.size() << ")> ";
         getline(cin, line);
 
+        // Encerra o programa
         if (regex_match(line, QUIT)) {
             break;
 
+        // Insere um valor na árvore
         } else if (regex_search(line, m, INSERT)) {
             int n = stoi(m[1]);
 
@@ -55,6 +59,7 @@ int main(int argc, char** argv) {
                 cerr << "Err: " << msg << endl;
             }
 
+        // Remove um valor da árvore
         } else if (regex_search(line, m, REMOVE)) {
             int n = stoi(m[1]);
             
@@ -64,6 +69,7 @@ int main(int argc, char** argv) {
                 cerr << "Err: " << msg << endl;
             }
 
+        // Escreve a árvore na tela
         } else if (regex_search(line, m, PRINT)) {
             string mode = m[1];
 
@@ -88,7 +94,7 @@ int main(int argc, char** argv) {
             } else if (mode == "level") {
                 int level = 0;
 
-                for (auto it = tree.level_begin(); it != tree.level_end(); it++) {
+                for (auto it = tree.begin_by_level(); it != tree.end_by_level(); it++) {
                     if (level != it.level()) {
                         cout << endl;
                         level = it.level();
@@ -102,9 +108,11 @@ int main(int argc, char** argv) {
             } else
                 cerr << "Err: Invalid printing mode `" << mode << "'" << endl;
 
+        // Limpa a árvore
         } else if (regex_match(line, CLEAR)) {
             tree.clear();
 
+        // Comando inválido
         } else {
             cerr << "Err: Invalid command" << endl;
             continue;
