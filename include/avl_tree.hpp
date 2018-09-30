@@ -375,19 +375,19 @@ public:
 		Equal is_equal;
 
 		if (info == nullptr) {
-			throw "Information not found";
+			insert(data);
 
 		} else if (is_less(data, *info)) {
 			if (left == nullptr)
-				throw "Information not found";
-
-			left->update(data);
+				insert(data);
+			else
+				left->update(data);
 
 		} else if (!is_equal(data, *info)) {
-			if (left == nullptr)
-				throw "Information not found";
-
-			right->update(data);
+			if (right == nullptr)
+				insert(data);
+			else
+				right->update(data);
 
 		} else
 			*info = data;
