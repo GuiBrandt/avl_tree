@@ -120,6 +120,18 @@ private:
 	}
 
 	/**
+	 * @brief Recalcula a altura da árvore e balanceia de necessário
+	 */
+	void recalculate() {
+		int rh = right ? right->_height : 0,
+			lh = left ? left->_height : 0;
+
+		_height = (rh > lh ? rh : lh) + 1;
+
+		rebalance();
+	}
+
+	/**
 	 * @brief Clona um ponteiro
 	 */
 	template <class ptrT> inline ptrT* clone_ptr(ptrT* ptr) {
@@ -286,7 +298,7 @@ public:
 			delete_if_empty(left);
 		}
 
-		rebalance();
+		recalculate();
 
 		return aux;
 	}
@@ -311,8 +323,8 @@ public:
 			info = right ? new T(right->pop()) : nullptr;
 			delete_if_empty(right);
 		}
-
-		rebalance();
+		
+		recalculate();
 
 		return aux;
 	}
@@ -348,24 +360,18 @@ public:
 
 			left->insert(data);
 
-			if (left->height() >= _height)
-				_height = left->height() + 1;
-
 		} else if (!is_equal(data, *info)) {
 			if (right == nullptr)
 				right = new avl_tree();
 
 			right->insert(data);
 
-			if (right->height() >= _height)
-				_height = right->height() + 1;
-
 		} else
 			throw "Repeated information";
 
 		_size++;
 
-		rebalance();
+		recalculate();
 	}
 	
 	/**
@@ -420,6 +426,10 @@ public:
 			} else {
 				delete info;
 				info = nullptr;
+				_height = 0;
+				_size = 0;
+
+				return;
 			}
 
 		} else if (left && is_less(data, *info)) {
@@ -433,8 +443,9 @@ public:
 		} else
 			throw "Information not found";
 
-			
 		_size--;
+
+		recalculate();
 	}
 	
 	/**
@@ -452,10 +463,13 @@ public:
 		if (is_equal(*info, data)) {
 			data = *info;
 			return true;
+
 		} else if (left && is_less(data, *info))
 			return left->includes(data);
+
 		else if (right)
 			return right->includes(data);
+
 		else
 			return false;
 	}
@@ -520,7 +534,7 @@ public:
 		while (!q.empty()) {
 			const avl_tree* node = q.front();
 			q.pop();
-			
+
 			int left_pos = 0, right_pos = 0;
 
 			// Informação
