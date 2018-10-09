@@ -12,6 +12,7 @@ static const regex INSERT(R"(^\s*(?:i|insert)\s*(\d+)\s*$)", icase | optimize);
 static const regex REMOVE(R"(^\s*(?:r|remove)\s*(\d+)\s*$)", icase | optimize);
 static const regex PRINT(R"(^\s*(?:p|print)\s*(in|pre|post|level)?\s*$)", icase | optimize);
 static const regex CLEAR(R"(^\s*(?:c|r|clear|reset)\s*$)", icase | optimize);
+static const regex SAVE(R"(^\s*(?:s|save)\s+([^\\\?%\*]+)\s*$)", icase | optimize);
 static const regex QUIT(R"(^\s*(?:q|quit|exit)\s*$)", icase | optimize);
 
 /**
@@ -31,11 +32,12 @@ int main(int argc, char** argv) {
     cout << "Interactive AVL Tree" << endl;
     cout << endl;
 
-    cout << "i|insert x                     : Insert X" << endl;
-    cout << "r|remove x                     : Remove X" << endl;
-    cout << "p|print [(sorted|level)]  : Print out" << endl;
-    cout << "c|r|clear|reset                : Reset" << endl;
-    cout << "q|e|quit|exit                  : Quit" << endl;
+    cout << "i|insert x                 : Insert X" << endl;
+    cout << "r|remove x                 : Remove X" << endl;
+    cout << "p|print [(sorted|level)]   : Print out" << endl;
+    cout << "s|save <filename>          : Save to file" << endl;
+    cout << "c|r|clear|reset            : Reset" << endl;
+    cout << "q|e|quit|exit              : Quit" << endl;
     cout << endl;
 
     cout << "Have fun!" << endl;
@@ -106,7 +108,13 @@ int main(int argc, char** argv) {
 
             } else
                 cerr << "Err: Invalid printing mode `" << mode << "'" << endl;
-
+        
+        // Salva a árvore num arquivo
+        } else if (regex_search(line, m, SAVE)) {
+            ofstream f(m[1], ios::binary);
+            f << tree;
+            f.close();
+            
         // Limpa a árvore
         } else if (regex_match(line, CLEAR)) {
             tree.clear();

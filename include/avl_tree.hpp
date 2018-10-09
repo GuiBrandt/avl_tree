@@ -12,7 +12,10 @@
 #include <functional>
 #include <iterator>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <utility>
+#include <vector>
 #include <queue>
 #include <stack>
 
@@ -435,11 +438,11 @@ public:
 	}
 	
 	/**
-	 * @brief Determina se uma informação existe na árvore
+	 * @brief Busca uma informação existe na árvore
 	 * 
 	 * @param data Dados a serem procurados
 	 */
-	bool includes(T& data) const {
+	bool find(T& data) const {
 		Compare is_less;
 		Equal is_equal;
 
@@ -455,6 +458,15 @@ public:
 			return right->includes(data);
 		else
 			return false;
+	}
+
+	/**
+	 * @brief Determina se uma informação existe na árvore
+	 * 
+	 * @param data Dados a serem procurados
+	 */
+	bool includes(T data) const {
+		return find(data);
 	}
 	
 	/**
@@ -483,6 +495,58 @@ public:
 
 		return out;
 	}
+	
+	/**
+	 * @brief Escreve uma árvore para um arquivo
+	 * 
+	 * @param out Stream de saída
+	 * @param tree Árvore a ser escrita
+	 * @return std::ofstream& A stream recebida por parâmetro
+	 */
+	friend std::ofstream & operator << (
+		std::ofstream & out,
+		const avl_tree < T > & tree
+	) {
+
+		std::stringstream header, body;
+
+		header << "AVL";
+
+		int node_count = 0;
+
+		std::queue<const avl_tree*> q;
+		q.push(&tree);
+
+		while (!q.empty()) {
+			const avl_tree* node = q.front();
+			q.pop();
+			
+			int left_pos = 0, right_pos = 0;
+
+			// Informação
+			body.write((char*)&node->info, sizeof(node->info));
+
+			// Nó esquerdo
+			if (node->left) {
+				q.push(node->left);
+				left_pos = ++node_count;
+			}
+			header.write((char*)&left_pos, sizeof(left_pos));
+
+			// Nó direito
+			if (node->right) {
+				q.push(node->right);
+				left_pos = ++node_count;
+			}
+			header.write((char*)&right_pos, sizeof(right_pos));
+		}
+
+		out.write((char*)&node_count, sizeof(node_count));
+		out << header.str();
+		out << body.str();
+
+		return out;
+	}
 
 	/**
 	 * @brief Classe de iterador por nível da árvore AVL
@@ -490,18 +554,23 @@ public:
 	class level_iterator : public std::iterator<std::input_iterator_tag, T> {
 		friend class avl_tree;
 
-	private:
-		typedef std::pair<int, avl_tree*> node;	//! Tipo usado para um nó na árvore
+		template < T > friend std::ofstream & operator << (
+			std::ofstream & out,
+			const avl_tree < T > & tree
+		);
 
-		std::queue<node> q;						//! Fila do iterador
-		int _level;								//! Nível atual do iterador na árvore
+	private:
+		typedef std::pair<int, const avl_tree*> node;	//! Tipo usado para um nó na árvore
+
+		std::queue<node> q;								//! Fila do iterador
+		int _level;										//! Nível atual do iterador na árvore
 
 		/**
 		 * @brief Construtor
 		 * 
 		 * @param t Ponteiro para a árvore AVL de início
 		 */
-		level_iterator(avl_tree* t) {
+		level_iterator(const avl_tree* t) {
 			if (t)
 				q.push(node(0, t));
 
@@ -532,7 +601,7 @@ public:
 			node current = q.front();
 
 			int lv = current.first;
-			avl_tree* t = current.second;
+			const avl_tree* t = current.second;
 
 			if (t->left)
 				q.push(node(lv + 1, t->left));
@@ -633,14 +702,14 @@ public:
 
 	private:
 
-		std::stack<avl_tree*> stack;	//! Pilha de nós percorridos
+		std::stack<const avl_tree*> stack;	//! Pilha de nós percorridos
 
 		/**
 		 * @brief Construtor
 		 * 
 		 * @param tree Árvore a ser percorrida
 		 */
-		inorder_iterator(avl_tree* tree) {
+		inorder_iterator(const avl_tree* tree) {
 			if (tree) {
 				stack.push(tree);
 
@@ -660,7 +729,7 @@ public:
 			if (stack.empty())
 				throw "Iterator ran out of bounds";
 
-			avl_tree* current = stack.top();
+			const avl_tree* current = stack.top();
 			stack.pop();
 
 			if (current->right) {
@@ -748,7 +817,7 @@ public:
 	 * 
 	 * @return level_iterator Iterador por nível
 	 */
-	level_iterator begin_by_level() {
+	level_iterator begin_by_level() const {
 		return empty() ? end_by_level() : level_iterator(this);
 	}
 
@@ -757,7 +826,7 @@ public:
 	 * 
 	 * @return level_iterator Iterador por nível
 	 */
-	level_iterator end_by_level() {
+	level_iterator end_by_level() const {
 		return level_iterator(nullptr);
 	}
 	
@@ -766,7 +835,7 @@ public:
 	 * 
 	 * @return inorder_iterator Iterador em-ordem
 	 */
-	inorder_iterator begin_in_order() {
+	inorder_iterator begin_in_order() const {
 		return empty() ? end_in_order() : inorder_iterator(this);
 	}
 
@@ -775,7 +844,7 @@ public:
 	 * 
 	 * @return inorder_iterator Iterador em-ordem
 	 */
-	inorder_iterator end_in_order() {
+	inorder_iterator end_in_order() const {
 		return inorder_iterator(nullptr);
 	}
 };
