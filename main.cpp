@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <stack>
 #include <regex>
 
 #include <avl_tree.hpp>
@@ -13,7 +14,45 @@ static const regex REMOVE(R"(^\s*(?:r|remove)\s*(\d+)\s*$)", icase | optimize);
 static const regex PRINT(R"(^\s*(?:p|print)\s*(in|pre|post|level)?\s*$)", icase | optimize);
 static const regex CLEAR(R"(^\s*(?:c|r|clear|reset)\s*$)", icase | optimize);
 static const regex SAVE(R"(^\s*(?:s|save)\s+([^\\\?%\*]+)\s*$)", icase | optimize);
+static const regex SAVEGV(R"(^\s*(?:g|graphviz)\s+([^\\\?%\*]+)\s*$)", icase | optimize);
 static const regex QUIT(R"(^\s*(?:q|quit|exit)\s*$)", icase | optimize);
+
+/**
+ * @brief Salva uma árvore num arquivo .gv na linguagem dot
+ * 
+ * @param file Arquivo de saída
+ * @param tree Árvore a ser salva
+ * @param i ID do nó no arquivo (gambiarra)
+ */
+void gv_save(ofstream& file, avl_tree<int>* tree, int& i) {
+    if (tree->empty())
+        return;
+
+    int current = i;
+    file << "node" << current << " [label=" << tree->get_info() << "]" << endl;
+
+    if (tree->get_left()) {
+        i++;
+
+        int left = i;
+        gv_save(file, tree->get_left(), i);
+
+        file    << "node" << current
+                << " -- "
+                << "node" << left << endl;
+    }
+
+    if (tree->get_right()) {
+        i++;
+
+        int right = i;
+        gv_save(file, tree->get_right(), i);
+
+        file    << "node" << current
+                << " -- " 
+                << "node" << right << endl;
+    }
+}
 
 /**
  * @brief Ponto de entrada
@@ -36,6 +75,7 @@ int main(int argc, char** argv) {
     cout << "r|remove x                 : Remove X" << endl;
     cout << "p|print [(sorted|level)]   : Print out" << endl;
     cout << "s|save <filename>          : Save to file" << endl;
+    cout << "g|graphviz <filename>      : Save Graphviz model to file" << endl;
     cout << "c|r|clear|reset            : Reset" << endl;
     cout << "q|e|quit|exit              : Quit" << endl;
     cout << endl;
@@ -113,6 +153,20 @@ int main(int argc, char** argv) {
         } else if (regex_search(line, m, SAVE)) {
             ofstream f(m[1], ios::binary);
             f << tree;
+            f.close();
+            
+        // Salva a árvore como modelo do graphviz num arquivo
+        } else if (regex_search(line, m, SAVEGV)) {
+            ofstream f(m[1]);
+            
+            f << "strict graph {" << endl;
+            f << "node [shape=rect]" << endl;
+
+            int i = 0;
+            gv_save(f, &tree, i);
+
+            f << "}";
+            
             f.close();
             
         // Limpa a árvore

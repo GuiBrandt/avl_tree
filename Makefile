@@ -9,30 +9,30 @@ LDLIBS_TESTS=-lm -l$(GOOGLE_TEST_LIB) -lpthread
 
 INCLUDES=include
 
-all: interactive tests
+all: interactive #tests
 interactive: obj/main.o
-	mkdir -p bin
+	if not exist bin mkdir bin
 	$(CXX) $(LDFLAGS) $(LDLIBS_MAIN) -o build/avl_tree $^
 
-tests: avl_tree_tests
-win32: tests
-	ren tests\all test\all.exe
+#tests: avl_tree_tests
+#win32: tests
+#	ren tests\all test\all.exe
 
-%_tests: obj/%_tests.o
-	mkdir -p build/tests
-	$(CXX) $(LDFLAGS) $(LDLIBS_TESTS) -o build/tests/$* $^
+#%_tests: obj/%_tests.o
+#	if not exist build/tests mkdir build/tests
+#	$(CXX) $(LDFLAGS) $(LDLIBS_TESTS) -o build/tests/$* $^
 
 obj/%_tests.o: tests/%_tests.cpp include/%.hpp
-	mkdir -p obj
+	if not exist obj mkdir obj
 	$(CXX) $(CXXFLAGS) -I$(INCLUDES) $(LDLIBS) -c $< -o $@
 
 obj/main.o: main.cpp include/avl_tree.hpp
-	mkdir -p build
-	mkdir -p obj
+	if not exist build mkdir build
+	if not exist obj mkdir obj
 	$(CXX) $(CXXFLAGS) -I$(INCLUDES) $(LDLIBS) -c $< -o $@
 
 clean:
 	$(RM) -r build
 	$(RM) -r obj
 
-.PHONY: all interactive tests clean
+.PHONY: all interactive clean #tests

@@ -563,6 +563,33 @@ public:
 	}
 
 	/**
+	 * @brief Obtém a árvore à esquerda
+	 * 
+	 * @return avl_tree* Nó à esquerda
+	 */
+	avl_tree* get_left() {
+		return this->left;
+	}
+
+	/**
+	 * @brief Obtém a árvore à direita
+	 * 
+	 * @return avl_tree* Nó à direita
+	 */
+	avl_tree* get_right() {
+		return this->right;
+	}
+	
+	/**
+	 * @brief Obtém a informação desse nó
+	 * 
+	 * @return T Informação do nó
+	 */
+	T get_info() {
+		return *this->info;
+	}
+
+	/**
 	 * @brief Classe de iterador por nível da árvore AVL
 	 */
 	class level_iterator : public std::iterator<std::input_iterator_tag, T> {
