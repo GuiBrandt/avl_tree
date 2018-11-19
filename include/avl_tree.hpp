@@ -521,10 +521,7 @@ public:
 		std::ofstream & out,
 		const avl_tree < T > & tree
 	) {
-
 		std::stringstream header, body;
-
-		header << "AVL";
 
 		int node_count = 0;
 
@@ -550,9 +547,53 @@ public:
 			// Nó direito
 			if (node->right) {
 				q.push(node->right);
-				left_pos = ++node_count;
+				right_pos = ++node_count;
 			}
 			header.write((char*)&right_pos, sizeof(right_pos));
+		}
+
+		out << "AVL";
+		out.write((char*)&node_count, sizeof(node_count));
+		out << header.str();
+		out << body.str();
+
+		return out;
+	}
+	
+	/**
+	 * @brief Lê uma árvore de um arquivo
+	 * 
+	 * @param out Stream de saída
+	 * @param tree Árvore a ser escrita
+	 * @return std::ofstream& A stream recebida por parâmetro
+	 */
+	friend std::ifstream & operator >> (
+		std::ifstream & in,
+		const avl_tree < T > & tree
+	) throw (const char*) {
+		char[3] magic;
+		in.read(magic, 3);
+
+		if (strcmp(magic, "AVL") != 0)
+			throw "Invalid AVL Tree file";
+
+		avl_tree< T > * current = &tree;
+
+		int node_count;
+		in.read((char*)&node_count, sizeof(node_count));
+
+		for (int i = 0; i < node_count; i++) {
+			int left_pos, right_pos;
+
+			// Informação
+			in.seekp(sizeof(magic) + 2 * sizeof(int) * node_count + sizeof(T) * i);
+			in.read((char*)&current->info, sizeof(current->info));
+
+			// Galhos
+			in.seekp(sizeof(magic) + 2 * sizeof(int) * i);
+
+			in.read((char*)&left_pos, sizeof(left_pos));
+			in.read((char*)&right_pos, sizeof(right_pos));
 		}
 
 		out.write((char*)&node_count, sizeof(node_count));
