@@ -497,7 +497,7 @@ public:
 	 */
 	friend std::ostream & operator <<(
 		std::ostream & out,
-		const avl_tree< T, compare_t, equal_t > & tree
+		const avl_tree& tree
 	) {
 		out << "( ";
 
@@ -547,11 +547,6 @@ public:
 	 */
 	class level_iterator : public std::iterator<std::input_iterator_tag, T> {
 		friend class avl_tree;
-
-		friend std::ofstream & operator<< (
-			std::ofstream & out,
-			const avl_tree<T, compare_t, equal_t> & tree
-		);
 
 	private:
 		typedef std::pair<int, const avl_tree*> node;	//! Tipo usado para um nó na árvore
@@ -846,17 +841,14 @@ public:
 	 * @brief Salva uma árvore num arquivo .gv na linguagem dot
 	 * 
 	 * @param file Arquivo de saída
-	 * @param tree Árvore a ser salva
-	 * @param i ID do nó no arquivo (gambiarra)
 	 */
 	void gv_save(std::ofstream& file) {
-		file << "graph {" << std::endl;
+		file << "strict graph {" << std::endl;
+        file << "node [shape=rect]" << std::endl;
 		int i = 0;
 		gv_save(file, i);
 		file << "}";
 	}
-
-private:
 
 	/**
 	 * @brief Salva uma árvore num arquivo .gv na linguagem dot
@@ -865,34 +857,33 @@ private:
 	 * @param tree Árvore a ser salva
 	 * @param i ID do nó no arquivo (gambiarra)
 	 */
-	void gv_save(std::ofstream& file, int& i) {
+	void gv_save(std::ofstream& file, int& i, std::string node_prefix = "node") {
 		if (this->empty())
 			return;
 
 		int current = i;
-		std::cout << (*info);
-		file << "node" << current << " [label=\"" << (*info) << "\"]" << std::endl;
-
+		file << "\"" << node_prefix << current << "\" [label=\"" << *info << "\"]" << std::endl;
+		
 		if (this->left) {
 			i++;
 
 			int left = i;
-			this->left->gv_save(file, i);
+			this->left->gv_save(file, i, node_prefix);
 
-			file    << "node" << current
+			file    << "\"" << node_prefix << current << "\""
 					<< " -- "
-					<< "node" << left << std::endl;
+					<< "\"" << node_prefix << left << "\"" << std::endl;
 		}
 
 		if (this->right) {
 			i++;
 
 			int right = i;
-			this->right->gv_save(file, i);
+			this->right->gv_save(file, i, node_prefix);
 
-			file    << "node" << current
+			file    << "\"" << node_prefix << current << "\""
 					<< " -- " 
-					<< "node" << right << std::endl;
+					<< "\"" << node_prefix << right << "\"" << std::endl;
 		}
 	}
 };
