@@ -586,21 +586,17 @@ public:
 			int left_pos, right_pos;
 
 			// Informação
-			in.seekp(sizeof(magic) + 2 * sizeof(int) * node_count + sizeof(T) * i);
+			in.seekg(sizeof(magic) + 2 * sizeof(int) * node_count + sizeof(T) * i);
 			in.read((char*)&current->info, sizeof(current->info));
 
 			// Galhos
-			in.seekp(sizeof(magic) + 2 * sizeof(int) * i);
+			in.seekg(sizeof(magic) + 2 * sizeof(int) * i);
 
 			in.read((char*)&left_pos, sizeof(left_pos));
 			in.read((char*)&right_pos, sizeof(right_pos));
 		}
 
-		out.write((char*)&node_count, sizeof(node_count));
-		out << header.str();
-		out << body.str();
-
-		return out;
+		return in;
 	}
 
 	/**
