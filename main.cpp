@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
             f << "node [shape=rect]" << endl;
 
             int i = 0;
-            gv_save(f, &tree, i);
+            tree.gv_save(f, i);
 
             f << "}";
             

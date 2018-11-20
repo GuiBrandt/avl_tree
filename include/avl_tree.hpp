@@ -925,43 +925,43 @@ public:
 	inorder_iterator end_in_order() const {
 		return inorder_iterator(nullptr);
 	}
+
+	/**
+	 * @brief Salva uma árvore num arquivo .gv na linguagem dot
+	 * 
+	 * @param file Arquivo de saída
+	 * @param tree Árvore a ser salva
+	 * @param i ID do nó no arquivo (gambiarra)
+	 */
+	void gv_save(std::ofstream& file, int& i) {
+		if (tree->empty())
+			return;
+
+		int current = i;
+		file << "node" << current << " [label=" << tree->get_info() << "]" << std::endl;
+
+		if (tree->get_left()) {
+			i++;
+
+			int left = i;
+			gv_save(file, tree->get_left(), i);
+
+			file    << "node" << current
+					<< " -- "
+					<< "node" << left << std::endl;
+		}
+
+		if (tree->get_right()) {
+			i++;
+
+			int right = i;
+			gv_save(file, tree->get_right(), i);
+
+			file    << "node" << current
+					<< " -- " 
+					<< "node" << right << std::endl;
+		}
+	}
 };
-
-/**
- * @brief Salva uma árvore num arquivo .gv na linguagem dot
- * 
- * @param file Arquivo de saída
- * @param tree Árvore a ser salva
- * @param i ID do nó no arquivo (gambiarra)
- */
-template <class T> void gv_save(std::ofstream& file, avl_tree<T>* tree, int& i) {
-    if (tree->empty())
-        return;
-
-    int current = i;
-    file << "node" << current << " [label=" << tree->get_info() << "]" << std::endl;
-
-    if (tree->get_left()) {
-        i++;
-
-        int left = i;
-        gv_save(file, tree->get_left(), i);
-
-        file    << "node" << current
-                << " -- "
-                << "node" << left << std::endl;
-    }
-
-    if (tree->get_right()) {
-        i++;
-
-        int right = i;
-        gv_save(file, tree->get_right(), i);
-
-        file    << "node" << current
-                << " -- " 
-                << "node" << right << std::endl;
-    }
-}
 
 #endif // AVL_TREE_HPP
