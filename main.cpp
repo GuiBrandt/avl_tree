@@ -125,8 +125,7 @@ int main(int argc, char** argv) {
             f << "strict graph {" << endl;
             f << "node [shape=rect]" << endl;
 
-            int i = 0;
-            gv_save(f, &tree, i);
+            tree.gv_save(f);
 
             f << "}";
             
