@@ -939,7 +939,7 @@ template <class T> void gv_save(std::ofstream& file, avl_tree<T>* tree, int& i) 
         return;
 
     int current = i;
-    file << "node" << current << " [label=" << tree->get_info() << "]" << endl;
+    file << "node" << current << " [label=" << tree->get_info() << "]" << std::endl;
 
     if (tree->get_left()) {
         i++;
@@ -949,7 +949,7 @@ template <class T> void gv_save(std::ofstream& file, avl_tree<T>* tree, int& i) 
 
         file    << "node" << current
                 << " -- "
-                << "node" << left << endl;
+                << "node" << left << std::endl;
     }
 
     if (tree->get_right()) {
@@ -960,7 +960,7 @@ template <class T> void gv_save(std::ofstream& file, avl_tree<T>* tree, int& i) 
 
         file    << "node" << current
                 << " -- " 
-                << "node" << right << endl;
+                << "node" << right << std::endl;
     }
 }
 
