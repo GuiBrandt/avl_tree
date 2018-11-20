@@ -400,6 +400,8 @@ public:
 
 		} else
 			*info = data;
+
+		recalculate();
 	}
 
 	/**
@@ -465,10 +467,10 @@ public:
 			return true;
 
 		} else if (left && is_less(data, *info))
-			return left->includes(data);
+			return left->find(data);
 
 		else if (right)
-			return right->includes(data);
+			return right->find(data);
 
 		else
 			return false;
@@ -490,9 +492,9 @@ public:
 	 * @param tree Árvore a ser escrita
 	 * @return std::ostream& A stream recebida por parâmetro
 	 */
-	friend std::ostream & operator << (
+	friend std::ostream & operator <<(
 		std::ostream & out,
-		const avl_tree < T > & tree
+		const avl_tree & tree
 	) {
 		out << "( ";
 
@@ -508,95 +510,6 @@ public:
 		out << ")";
 
 		return out;
-	}
-	
-	/**
-	 * @brief Escreve uma árvore para um arquivo
-	 * 
-	 * @param out Stream de saída
-	 * @param tree Árvore a ser escrita
-	 * @return std::ofstream& A stream recebida por parâmetro
-	 */
-	friend std::ofstream & operator << (
-		std::ofstream & out,
-		const avl_tree < T > & tree
-	) {
-		std::stringstream header, body;
-
-		int node_count = 0;
-
-		std::queue<const avl_tree*> q;
-		q.push(&tree);
-
-		while (!q.empty()) {
-			const avl_tree* node = q.front();
-			q.pop();
-
-			int left_pos = 0, right_pos = 0;
-
-			// Informação
-			body.write((char*)&node->info, sizeof(node->info));
-
-			// Nó esquerdo
-			if (node->left) {
-				q.push(node->left);
-				left_pos = ++node_count;
-			}
-			header.write((char*)&left_pos, sizeof(left_pos));
-
-			// Nó direito
-			if (node->right) {
-				q.push(node->right);
-				right_pos = ++node_count;
-			}
-			header.write((char*)&right_pos, sizeof(right_pos));
-		}
-
-		out << "AVL";
-		out.write((char*)&node_count, sizeof(node_count));
-		out << header.str();
-		out << body.str();
-
-		return out;
-	}
-	
-	/**
-	 * @brief Lê uma árvore de um arquivo
-	 * 
-	 * @param out Stream de saída
-	 * @param tree Árvore a ser escrita
-	 * @return std::ofstream& A stream recebida por parâmetro
-	 */
-	friend std::ifstream & operator >> (
-		std::ifstream & in,
-		const avl_tree < T > & tree
-	) throw (const char*) {
-		char magic[3];
-		in.read(magic, 3);
-
-		if (strcmp(magic, "AVL") != 0)
-			throw "Invalid AVL Tree file";
-
-		avl_tree< T > * current = &tree;
-
-		int node_count;
-		in.read((char*)&node_count, sizeof(node_count));
-
-		for (int i = 0; i < node_count; i++) {
-			int left_pos, right_pos;
-
-			// Informação
-			in.seekg(sizeof(magic) + 2 * sizeof(int) * node_count + sizeof(T) * i);
-			in.read((char*)&current->info, sizeof(current->info));
-
-			// Galhos
-			in.seekg(sizeof(magic) + 2 * sizeof(int) * i);
-
-			in.read((char*)&left_pos, sizeof(left_pos));
-			in.read((char*)&right_pos, sizeof(right_pos));
-		}
-
-		return in;
 	}
 
 	/**
@@ -632,9 +545,9 @@ public:
 	class level_iterator : public std::iterator<std::input_iterator_tag, T> {
 		friend class avl_tree;
 
-		template < T > friend std::ofstream & operator << (
+		template < T, Compare, Equal > friend std::ofstream & operator << (
 			std::ofstream & out,
-			const avl_tree < T > & tree
+			const avl_tree < T, Compare, Equal > & tree
 		);
 
 	private:
@@ -933,29 +846,46 @@ public:
 	 * @param tree Árvore a ser salva
 	 * @param i ID do nó no arquivo (gambiarra)
 	 */
+	void gv_save(std::ofstream& file) {
+		file << "graph {" << std::endl;
+		int i = 0;
+		gv_save(file, i);
+		file << "}";
+	}
+
+private:
+
+	/**
+	 * @brief Salva uma árvore num arquivo .gv na linguagem dot
+	 * 
+	 * @param file Arquivo de saída
+	 * @param tree Árvore a ser salva
+	 * @param i ID do nó no arquivo (gambiarra)
+	 */
 	void gv_save(std::ofstream& file, int& i) {
-		if (tree->empty())
+		if (this->empty())
 			return;
 
 		int current = i;
-		file << "node" << current << " [label=" << tree->get_info() << "]" << std::endl;
+		std::cout << (*info);
+		file << "node" << current << " [label=\"" << (*info) << "\"]" << std::endl;
 
-		if (tree->get_left()) {
+		if (this->left) {
 			i++;
 
 			int left = i;
-			gv_save(file, tree->get_left(), i);
+			this->left->gv_save(file, i);
 
 			file    << "node" << current
 					<< " -- "
 					<< "node" << left << std::endl;
 		}
 
-		if (tree->get_right()) {
+		if (this->right) {
 			i++;
 
 			int right = i;
-			gv_save(file, tree->get_right(), i);
+			this->right->gv_save(file, i);
 
 			file    << "node" << current
 					<< " -- " 

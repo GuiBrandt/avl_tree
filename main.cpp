@@ -121,15 +121,7 @@ int main(int argc, char** argv) {
         // Salva a árvore como modelo do graphviz num arquivo
         } else if (regex_search(line, m, SAVEGV)) {
             ofstream f(m[1]);
-            
-            f << "strict graph {" << endl;
-            f << "node [shape=rect]" << endl;
-
-            int i = 0;
-            tree.gv_save(f, i);
-
-            f << "}";
-            
+            tree.gv_save(f);
             f.close();
             
         // Limpa a árvore
