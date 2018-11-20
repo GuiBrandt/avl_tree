@@ -571,7 +571,7 @@ public:
 		std::ifstream & in,
 		const avl_tree < T > & tree
 	) throw (const char*) {
-		char[3] magic;
+		char magic[3];
 		in.read(magic, 3);
 
 		if (strcmp(magic, "AVL") != 0)
@@ -930,5 +930,42 @@ public:
 		return inorder_iterator(nullptr);
 	}
 };
+
+/**
+ * @brief Salva uma árvore num arquivo .gv na linguagem dot
+ * 
+ * @param file Arquivo de saída
+ * @param tree Árvore a ser salva
+ * @param i ID do nó no arquivo (gambiarra)
+ */
+void gv_save(std::ofstream& file, avl_tree<int>* tree, int& i) {
+    if (tree->empty())
+        return;
+
+    int current = i;
+    file << "node" << current << " [label=" << tree->get_info() << "]" << endl;
+
+    if (tree->get_left()) {
+        i++;
+
+        int left = i;
+        gv_save(file, tree->get_left(), i);
+
+        file    << "node" << current
+                << " -- "
+                << "node" << left << endl;
+    }
+
+    if (tree->get_right()) {
+        i++;
+
+        int right = i;
+        gv_save(file, tree->get_right(), i);
+
+        file    << "node" << current
+                << " -- " 
+                << "node" << right << endl;
+    }
+}
 
 #endif // AVL_TREE_HPP

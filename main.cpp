@@ -18,43 +18,6 @@ static const regex SAVEGV(R"(^\s*(?:g|graphviz)\s+([^\\\?%\*]+)\s*$)", icase | o
 static const regex QUIT(R"(^\s*(?:q|quit|exit)\s*$)", icase | optimize);
 
 /**
- * @brief Salva uma árvore num arquivo .gv na linguagem dot
- * 
- * @param file Arquivo de saída
- * @param tree Árvore a ser salva
- * @param i ID do nó no arquivo (gambiarra)
- */
-void gv_save(ofstream& file, avl_tree<int>* tree, int& i) {
-    if (tree->empty())
-        return;
-
-    int current = i;
-    file << "node" << current << " [label=" << tree->get_info() << "]" << endl;
-
-    if (tree->get_left()) {
-        i++;
-
-        int left = i;
-        gv_save(file, tree->get_left(), i);
-
-        file    << "node" << current
-                << " -- "
-                << "node" << left << endl;
-    }
-
-    if (tree->get_right()) {
-        i++;
-
-        int right = i;
-        gv_save(file, tree->get_right(), i);
-
-        file    << "node" << current
-                << " -- " 
-                << "node" << right << endl;
-    }
-}
-
-/**
  * @brief Ponto de entrada
  * 
  * @param argc Número de argumentos da linha de comando
