@@ -938,7 +938,7 @@ public:
  * @param tree Árvore a ser salva
  * @param i ID do nó no arquivo (gambiarra)
  */
-void gv_save(std::ofstream& file, avl_tree<int>* tree, int& i) {
+template <class T> void gv_save(std::ofstream& file, avl_tree<T>* tree, int& i) {
     if (tree->empty())
         return;
 
