@@ -31,6 +31,9 @@ template <
 > class avl_tree {
 private:
 
+	typedef Compare compare_t;
+	typedef Equal equal_t;
+
 	T* info;			//! Informação do nó
 	avl_tree* left;		//! Nó à esquerda
 	avl_tree* right;	//! Nó à direita
@@ -494,7 +497,7 @@ public:
 	 */
 	friend std::ostream & operator <<(
 		std::ostream & out,
-		const avl_tree & tree
+		const avl_tree< T, compare_t, equal_t > & tree
 	) {
 		out << "( ";
 
@@ -545,9 +548,9 @@ public:
 	class level_iterator : public std::iterator<std::input_iterator_tag, T> {
 		friend class avl_tree;
 
-		template < T, Compare, Equal > friend std::ofstream & operator << (
+		friend std::ofstream & operator<< (
 			std::ofstream & out,
-			const avl_tree < T, Compare, Equal > & tree
+			const avl_tree<T, compare_t, equal_t> & tree
 		);
 
 	private:
