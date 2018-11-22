@@ -11,7 +11,7 @@ INCLUDES=include
 
 all: interactive #tests
 interactive: obj/main.o
-	if not exist bin mkdir bin
+	mkdir -p bin
 	$(CXX) $(LDFLAGS) $(LDLIBS_MAIN) -o build/avl_tree $^
 
 #tests: avl_tree_tests
@@ -23,12 +23,12 @@ interactive: obj/main.o
 #	$(CXX) $(LDFLAGS) $(LDLIBS_TESTS) -o build/tests/$* $^
 
 obj/%_tests.o: tests/%_tests.cpp include/%.hpp
-	if not exist obj mkdir obj
+	mkdir -p obj
 	$(CXX) $(CXXFLAGS) -I$(INCLUDES) $(LDLIBS) -c $< -o $@
 
 obj/main.o: main.cpp include/avl_tree.hpp
-	if not exist build mkdir build
-	if not exist obj mkdir obj
+	mkdir -p build
+	mkdir -p obj
 	$(CXX) $(CXXFLAGS) -I$(INCLUDES) $(LDLIBS) -c $< -o $@
 
 clean:

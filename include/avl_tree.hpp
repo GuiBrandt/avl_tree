@@ -357,21 +357,22 @@ public:
 			info = new T(data);
 			_height = 1;
 
+		} else if (is_equal(data, *info)) {
+			throw "Repeated information";
+
 		} else if (is_less(data, *info)) {
 			if (left == nullptr)
 				left = new avl_tree();
 
 			left->insert(data);
 
-		} else if (!is_equal(data, *info)) {
+		} else {
 			if (right == nullptr)
 				right = new avl_tree();
 
 			right->insert(data);
-
-		} else
-			throw "Repeated information";
-
+		}
+		
 		_size++;
 
 		recalculate();
@@ -389,20 +390,21 @@ public:
 		if (info == nullptr) {
 			insert(data);
 
+		} else if (is_equal(data, *info)) {
+			*info = data;
+
 		} else if (is_less(data, *info)) {
 			if (left == nullptr)
 				insert(data);
 			else
 				left->update(data);
 
-		} else if (!is_equal(data, *info)) {
+		} else {
 			if (right == nullptr)
 				insert(data);
 			else
 				right->update(data);
-
-		} else
-			*info = data;
+		}
 
 		recalculate();
 	}
